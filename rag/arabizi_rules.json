@@ -1,0 +1,19 @@
+{
+  "_source": "Fourati et al. 2021, 'Introducing A large Tunisian Arabizi Dialectal Dataset for Sentiment Analysis', WANLP 2021, Table 1 (corrected by native speaker).",
+  "_note": "Tunizi = Tunisian Arabizi. Numbers replace Arabic sounds that have no Latin letter. Tunisians use a French background (so 'ch' for sh, 'ou' for u), unlike Egyptian Arabizi.",
+  "letter_rules": [
+    {"arabic": "ح", "name": "haa",  "arabizi_general": ["7"],        "tunizi": ["7"],          "canonical": "7"},
+    {"arabic": "خ", "name": "khaa", "arabizi_general": ["5", "7'"],  "tunizi": ["5", "kh"],    "canonical": "5"},
+    {"arabic": "ذ", "name": "dhal", "arabizi_general": ["dh", "d'"], "tunizi": ["dh"],         "canonical": "dh"},
+    {"arabic": "ش", "name": "chin", "arabizi_general": ["ch", "sh", "$"], "tunizi": ["ch"],    "canonical": "ch"},
+    {"arabic": "ث", "name": "thaa", "arabizi_general": ["th", "t'"], "tunizi": ["th"],         "canonical": "th"},
+    {"arabic": "غ", "name": "ghin", "arabizi_general": ["4'", "gh"], "tunizi": ["gh"],         "canonical": "gh"},
+    {"arabic": "ع", "name": "3ain", "arabizi_general": ["3"],        "tunizi": ["3"],          "canonical": "3"},
+    {"arabic": "ق", "name": "qaf",  "arabizi_general": ["9"],        "tunizi": ["9", "k", "q"],"canonical": "9"}
+  ],
+  "extra_conventions": {
+    "ء": ["2"],
+    "_comment_hamza": "glottal stop / hamza is commonly written as 2 (e.g. so2al)",
+    "ambiguous_q": "ق is usually 9 in Tunizi but sometimes k or q; do NOT force k->9 because ك (kaf) is also k."
+  }
+}

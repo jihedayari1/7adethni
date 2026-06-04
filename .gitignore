@@ -1,0 +1,27 @@
+# Raw uncompressed corpus chunks (>100MB each) — pushed as .zip instead
+chunk_1.json
+chunk_2.json
+chunk_3.json
+chunk_4.json
+chunk_5.json
+chunk_6.json
+chunk_7.json
+chunk_8.json
+chunk_9.json
+chunk_10.json
+chunk_11.json
+chunk_12.json
+chunk_13.json
+chunk_14.json
+chunk_15.json
+
+# Python
+__pycache__/
+*.pyc
+
+# Local model caches (if semantic RAG is enabled)
+.cache/
+
+# Raw Facebook scrapes contain personal data - keep local, never push
+dataset_facebook-comments-scraper_*.json
+facebook_raw/
