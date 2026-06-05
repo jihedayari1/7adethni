@@ -313,9 +313,27 @@ def estimate(per_call: int, target: int, cs_ratio: float):
     print("Switch MODEL to claude-sonnet-4-6 to cut this ~ in half.")
 
 
+WEB_ASK = """\
+
+============================ YOUR TASK ============================
+Output a JSON array of 30 NEW pairs.
+- ~45% with "category": "customer_service" (vary store domains: clothing, phones,
+  cosmetics, food/pastry, shoes, baby, home, sport).
+- ~55% with "category": "general" (vary topics widely: daily_life, food_cooking,
+  football_sport, family_friends, work_study, health_wellbeing, emotions_support,
+  technology, travel_places, opinions_debate, jokes_banter, advice, general_knowledge,
+  money_economy, culture_traditions, weather, hobbies_music, motivation_goals).
+Each element exactly: {"category": "...", "topic": "...", "user": "...", "assistant": "..."}
+Obey ALL the rules above (Arabizi only, the 7/5/3/9/gh/ch/th/dh convention, NO fos7a).
+Output ONLY the raw JSON array — no prose, no markdown fences.
+=================================================================="""
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--target", type=int, default=200)
+    ap.add_argument("--web-prompt", action="store_true",
+                    help="print the FREE copy-paste prompt for the Claude website (no API key needed)")
     ap.add_argument("--per-call", type=int, default=PER_CALL)
     ap.add_argument("--cs-ratio", type=float, default=0.45,
                     help="share of customer-service pairs (rest is general). default 0.45")
@@ -324,6 +342,9 @@ def main():
     ap.add_argument("--estimate", action="store_true")
     args = ap.parse_args()
 
+    if args.web_prompt:
+        print(SYSTEM + WEB_ASK)
+        return
     if args.dry_run:
         print("=== SYSTEM (cached, both categories) ===\n" + SYSTEM[:1200] + "\n...[truncated]...\n")
         print("=== USER (general) ===\n" +
