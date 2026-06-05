@@ -1,0 +1,11 @@
+# One Tunisian e-commerce page name OR a single post URL per line.
+# Lines starting with # are ignored. Pick pages where the SHOP answers comments.
+# Replace these with real active stores across categories (clothing, phones, cosmetics, food...).
+#
+# page names (from the page's URL, the part after facebook.com/):
+example_clothing_store_tn
+example_phones_tn
+example_cosmetics_tn
+#
+# or specific posts that you can SEE have customer Q&A with shop replies:
+# https://www.facebook.com/somestore/posts/123456789012345

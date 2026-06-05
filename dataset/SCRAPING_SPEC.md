@@ -140,6 +140,18 @@ When you configure the Facebook comments scraper (e.g. Apify), make sure to:
 Then run: `python dataset/tools/clean_facebook.py <your_new_scrape.json>` — it strips PII and
 builds the pairs automatically.
 
+### Two scraper options
+- **Apify "facebook-comments-scraper" (paid, robust)** — what you already used; just enable
+  replies. More reliable against FB blocking; best for hitting volume for a paid product.
+- **kevinzg/facebook-scraper (free, fragile)** — wrapper provided: `dataset/tools/fb_scrape.py`.
+  ```
+  python dataset/tools/fb_scrape.py --pages dataset/tools/pages.example.txt --cookies cookies.txt
+  python dataset/tools/clean_facebook.py facebook_raw/*.json
+  ```
+  Free, but FB serves only ~30 "most relevant" comments/post anonymously, replies can fail, and
+  heavy runs get IP-banned — so scrape many more posts and expect lower yield. Needs your FB
+  cookies (account-ban risk). Output already matches the cleaner's schema.
+
 ## TL;DR — what to bring me
 1. **~80k–120k raw FB comments** (with reply threads) from 30–50 Tunisian e-commerce pages,
    covering the intents in §5. Keep `author_name` + `parent` so I can build pairs; I strip PII.
