@@ -25,3 +25,7 @@ __pycache__/
 # Raw Facebook scrapes contain personal data - keep local, never push
 dataset_facebook-comments-scraper_*.json
 facebook_raw/
+
+# vendored third-party repo
+vendor/
+cookies.txt

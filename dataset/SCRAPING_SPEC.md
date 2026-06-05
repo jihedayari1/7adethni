@@ -143,14 +143,17 @@ builds the pairs automatically.
 ### Two scraper options
 - **Apify "facebook-comments-scraper" (paid, robust)** — what you already used; just enable
   replies. More reliable against FB blocking; best for hitting volume for a paid product.
-- **kevinzg/facebook-scraper (free, fragile)** — wrapper provided: `dataset/tools/fb_scrape.py`.
-  ```
-  python dataset/tools/fb_scrape.py --pages dataset/tools/pages.example.txt --cookies cookies.txt
-  python dataset/tools/clean_facebook.py facebook_raw/*.json
-  ```
-  Free, but FB serves only ~30 "most relevant" comments/post anonymously, replies can fail, and
-  heavy runs get IP-banned — so scrape many more posts and expect lower yield. Needs your FB
-  cookies (account-ban risk). Output already matches the cleaner's schema.
+- **kevinzg/facebook-scraper (free) — CONFIRMED NON-VIABLE (tested 2026-06).**
+  Cloned + live-tested: `get_posts()` returns 0 posts. Facebook now serves a **login wall** for
+  both `m.facebook.com` and `mbasic.facebook.com`, so its "scrape without an API key" premise is
+  dead. Repo is also unmaintained (last commit Oct 2023) with stale HTML selectors. Not worth
+  repairing — would need live login cookies (account-ban risk) + a full extractor rewrite that
+  breaks on FB's next change. The `dataset/tools/fb_scrape.py` wrapper remains only as a schema
+  adapter if a working scraper is swapped in.
+- **Official Meta Graph/Messenger API — the production path.** For the shipped product, each store
+  authorizes access to its OWN page/Messenger via Meta's official API: legal, reliable, and it's
+  the integration the bot needs to read/reply to messages anyway. Scraping is only a one-time
+  training-data bootstrap; the product runs on the official API.
 
 ## TL;DR — what to bring me
 1. **~80k–120k raw FB comments** (with reply threads) from 30–50 Tunisian e-commerce pages,
