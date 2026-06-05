@@ -1,0 +1,11 @@
+# Core
+pandas
+pyarrow            # read the TUNIZI parquet
+rapidfuzz          # RAG hybrid retriever (fuzzy matching)
+
+# Dataset generation (Claude)
+anthropic          # aigenerateddataset/generate_cs_dataset.py  (needs ANTHROPIC_API_KEY)
+
+# Optional
+sentence-transformers   # rag/retriever.py --semantic backstop (downloads a model)
+facebook-scraper        # dataset/tools/fb_scrape.py (NOTE: FB login wall makes this unreliable)
