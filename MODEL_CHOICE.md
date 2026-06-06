@@ -61,6 +61,49 @@ also target **Arabic-script** Derja.
   and your CS domain**, runs cheap, and you fully own. It won't match frontier general
   intelligence — and it doesn't need to.
 
+---
+
+# Deeper comparison (research-backed) — for the refined goal
+
+Refined requirements: (1) UNDERSTAND input in Arabizi OR Arabic-script Derja OR FR/EN
+(multilingual), (2) strong reasoning "brain", (3) OUTPUT fluent Arabizi with no errors.
+
+## Direct precedents (closest published work to this exact task)
+- **NileChat (2505.18383)** — dialectal Arabic **+ Arabizi**, base = **Qwen-2.5-3B**. Chosen for
+  strong MSA + best tokenizer efficiency on Arabic. They trained **dual-script** (Arabic +
+  ~2M examples converted to Arabizi). → closest analog to our goal; validates **Qwen + Arabizi**.
+- **GemMaroc (2505.17082)** — Moroccan **Darija**, base = **Gemma 3 (4B/27B)**. Learned the
+  dialect from only ~50k reasoning-dense examples and **kept its reasoning** (GSM8K 84.2%,
+  DarijaMMLU 61.6% with ~1/10 the data). **Arabic-script only — no Arabizi.**
+- **Leaderboards:** Llama-3.3-70B tops OALL v2 / AraGen; Qwen2.5 is the strong baseline; Qwen3
+  tops HELM-Arabic among open weights and dominates small-model fine-tuning benchmarks.
+
+## Scored against the 3 requirements (7–9B class, for cheap serving)
+
+| Model | (1) Understand Arabizi+Arabic+FR/EN | (2) Reasoning brain | (3) Arabizi output (after FT) | Tokenizer on Arabic | Precedent | Verdict |
+|---|---|---|---|---|---|---|
+| **Qwen2.5-7B / Qwen3-8B** ⭐ | **very strong** (MSA+multilingual; Qwen used for Arabizi in NileChat) | **top** (Qwen3 #1 small-model FT) | proven (NileChat) | efficient | **NileChat = dialect+Arabizi** | **Best fit — pick this** |
+| **Gemma 3 (4B/12B)** | strong | **top** (kept GSM8K 84%) | untested for Arabizi | efficient | GemMaroc = Darija (Arabic-script) | Strong #2; great if you also want Arabic-script |
+| **Llama 3.1-8B (3.3-70B)** | good (70B best on Arabic leaderboards) | strong | workable | ok | leaderboard #1 at 70B | Great ecosystem; 8B Arabic weaker than Qwen |
+| Jais / ALLaM | best Arabic-script, weak FR/Arabizi, weaker reasoning | lower | weak | n/a | Arabic-script only | Not for an Arabizi target |
+
+## FINAL PICK
+**Qwen3-8B-Instruct** (primary) — newest, best reasoning, Apache 2.0, and the only family with a
+published **dialect-+-Arabizi** precedent (NileChat). **Qwen2.5-7B-Instruct** is the safe,
+heavily-documented fallback (more tutorials, the exact NileChat base family).
+**Gemma-3-12B-it** is the strong alternate, especially if you later add an Arabic-script mode.
+
+## Method lessons to apply at fine-tune time (from both papers)
+- Keep **~20% English/MSA** data in the mix → prevents catastrophic forgetting of the brain.
+- **Reasoning-dense, quality** instruction data beats large generic data (GemMaroc: 1/10 the data).
+- Train **dual-script understanding**: include Arabic-script Derja inputs too (we have the 3GB
+  corpus + Arabic-script lexicon + parallel data) so it understands Arabic-letter input, while
+  always **answering in Arabizi** (NileChat's dual-script recipe).
+
+## Sources
+HELM-Arabic / siliconflow Arabic guide; Open Arabic LLM Leaderboard v2 (HF blog); GemMaroc
+(arXiv 2505.17082); NileChat (arXiv 2505.18383); distil labs small-model FT benchmark.
+
 ## Compute / cost to fine-tune (all open options)
 QLoRA on 7–9B fits a single 24 GB GPU (RTX 3090/4090) or cloud (~$0.5–2/hr on RunPod/Colab/Lambda).
 Effectively free to iterate. You keep the resulting adapter/weights.
