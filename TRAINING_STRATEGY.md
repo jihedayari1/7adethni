@@ -31,8 +31,11 @@ NATIVE REVIEW, more than any training trick (proven by GemMaroc matching SOTA wi
 
 ## The staged plan
 **v1 (now) — SFT done right:**
-1. Grow pairs: convert parallel CSVs (clean_darija_english 35k, derja-english 18k) → instruction
-   pairs; keep generating diverse conversational ones.
+1. Grow pairs: convert the **Tunisian** parallel source (derja-english 18k → 32k comprehension/
+   translation pairs) — NOTE: clean_darija_english.csv is **Moroccan** Darija and is EXCLUDED
+   (would corrupt the model; a Moroccan-marker filter enforces this). Keep generating diverse
+   conversational Tunisian pairs (the priority). For Tunisian translation at scale, download
+   MADAR (Tunis/Sfax), TEDxTN, or WANLP Tunisian.
 2. Native-review a strong sample (review.py).
 3. Mix ~10–20% English/MSA pairs.
 4. Build 300-item eval set + MSA-leakage classifier.
