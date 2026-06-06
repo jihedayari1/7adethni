@@ -26,6 +26,7 @@ OUT = ROOT / "aigenerateddataset" / "cs_pairs.jsonl"
 
 USER_KEYS = ("user", "customer", "instruction", "prompt")
 ASST_KEYS = ("assistant", "agent", "output", "response")
+_AR = re.compile(r"[؀-ۿ]")
 
 
 def get(d, keys):
@@ -111,7 +112,9 @@ def main():
             out.write(json.dumps({
                 "instruction": u, "output": a,
                 "category": p.get("category", ""), "topic": p.get("topic", ""),
-                "domain": p.get("domain"), "synthetic": True, "needs_native_review": True,
+                "domain": p.get("domain"),
+                "input_script": "arabic" if _AR.search(u) else "latin",
+                "synthetic": True, "needs_native_review": True,
                 "source": "claude-web",
             }, ensure_ascii=False) + "\n")
             kept += 1; fkept += 1

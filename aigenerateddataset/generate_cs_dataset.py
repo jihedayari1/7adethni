@@ -190,11 +190,14 @@ def enforce_convention(t: str) -> str:
     return re.sub(r"\s+", " ", t)
 
 def is_clean(user: str, assistant: str) -> bool:
+    # Dual-script (NileChat recipe): the INPUT (user) may be Arabizi, Arabic-script Derja,
+    # French, or English — we want the model to understand ALL of them. The OUTPUT (assistant)
+    # must ALWAYS be fluent Arabizi (Latin), never Arabic script and never MSA.
     if not (2 <= len(user) <= 300 and 2 <= len(assistant) <= 400):
         return False
-    if _ARABIC.search(user + assistant):           # must be Arabizi, not Arabic script
+    if _ARABIC.search(assistant):                  # OUTPUT must be Arabizi, not Arabic script
         return False
-    if _MSA.search(user + assistant):              # MSA leakage
+    if _MSA.search(assistant):                     # MSA leakage only matters on the OUTPUT
         return False
     if len(assistant.split()) < 2:
         return False
