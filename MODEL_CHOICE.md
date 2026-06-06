@@ -107,3 +107,24 @@ HELM-Arabic / siliconflow Arabic guide; Open Arabic LLM Leaderboard v2 (HF blog)
 ## Compute / cost to fine-tune (all open options)
 QLoRA on 7–9B fits a single 24 GB GPU (RTX 3090/4090) or cloud (~$0.5–2/hr on RunPod/Colab/Lambda).
 Effectively free to iterate. You keep the resulting adapter/weights.
+
+---
+
+## Hardware & where to train (user's laptop: RTX 4050 Laptop, 6 GB VRAM, 16 GB RAM)
+
+**6 GB VRAM cannot fine-tune an 8B model.** Approx QLoRA (4-bit, Unsloth, seq ~1024) VRAM:
+
+| Model | VRAM | 6 GB laptop |
+|-------|------|-------------|
+| 1.5B  | ~3–4 GB | ✅ easy |
+| **3B** (Qwen2.5-3B) | ~5–6 GB | ✅ tight but works — NileChat's base |
+| 4B    | ~6–8 GB | ⚠️ borderline |
+| **8B** (Qwen3-8B) | ~8–12 GB | ❌ won't fit |
+| Inference 8B (4-bit GGUF) | ~5–6 GB | ✅ tight (or CPU+RAM, slow) |
+
+**Plan (decided: build training later):**
+- **Prototype** on the laptop with **Qwen2.5-3B** QLoRA (fits 6 GB, fully offline).
+- **Train v1 (Qwen3-8B)** for FREE on **Kaggle** (T4×2 16 GB, 30 h/week) ⭐ or Colab; download the
+  LoRA adapter (~100–200 MB) and own it. Paid RunPod/Vast (~$0.2–0.5/hr) if speed needed.
+- **All data + RAG work runs on the laptop CPU** — no GPU needed. Only the 8B *training* needs cloud.
+- **Serving** the product: quantize to 4-bit GGUF on a cheap cloud server (or the 6 GB GPU for testing).
