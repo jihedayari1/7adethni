@@ -193,7 +193,8 @@ def is_clean(user: str, assistant: str) -> bool:
     # Dual-script (NileChat recipe): the INPUT (user) may be Arabizi, Arabic-script Derja,
     # French, or English — we want the model to understand ALL of them. The OUTPUT (assistant)
     # must ALWAYS be fluent Arabizi (Latin), never Arabic script and never MSA.
-    if not (2 <= len(user) <= 300 and 2 <= len(assistant) <= 400):
+    # allow short replies AND long-form (stories, deep explanations, step-by-step guides)
+    if not (2 <= len(user) <= 600 and 2 <= len(assistant) <= 3000):
         return False
     if _ARABIC.search(assistant):                  # OUTPUT must be Arabizi, not Arabic script
         return False

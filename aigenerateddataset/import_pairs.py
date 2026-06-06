@@ -67,16 +67,38 @@ def extract_objects(text: str):
     return objs
 
 
+def dup_key(u, a):
+    # stronger key: full normalized instruction + a long normalized output prefix.
+    return (normalize(u), normalize(a)[:120])
+
 def load_seen():
     seen = set()
     if OUT.exists():
         for l in open(OUT, encoding="utf-8"):
             try:
                 r = json.loads(l)
-                seen.add((normalize(get(r, USER_KEYS))[:50], normalize(get(r, ASST_KEYS))[:50]))
+                seen.add(dup_key(get(r, USER_KEYS), get(r, ASST_KEYS)))
             except json.JSONDecodeError:
                 pass
     return seen
+
+
+def audit_duplicates():
+    """Scan the whole dataset and report any repeated instruction or output."""
+    if not OUT.exists():
+        return
+    ui, oi = {}, {}
+    for l in open(OUT, encoding="utf-8"):
+        try:
+            r = json.loads(l)
+        except json.JSONDecodeError:
+            continue
+        ui[normalize(get(r, USER_KEYS))] = ui.get(normalize(get(r, USER_KEYS)), 0) + 1
+        oi[normalize(get(r, ASST_KEYS))] = oi.get(normalize(get(r, ASST_KEYS)), 0) + 1
+    dup_u = sum(1 for v in ui.values() if v > 1)
+    dup_o = sum(1 for v in oi.values() if v > 1)
+    print(f"duplicate audit: {dup_u} repeated instructions, {dup_o} repeated outputs "
+          f"(0/0 = fully unique)")
 
 
 def main():
@@ -105,7 +127,7 @@ def main():
             a = enforce_convention(get(p, ASST_KEYS))
             if not is_clean(u, a):
                 dropped_dirty += 1; continue
-            key = (normalize(u)[:50], normalize(a)[:50])
+            key = dup_key(u, a)
             if key in seen:
                 dropped_dup += 1; continue
             seen.add(key)
@@ -122,6 +144,7 @@ def main():
     out.close()
     print(f"\nIMPORTED {kept} clean pairs (from {total_in} pasted) -> {OUT.relative_to(ROOT)}")
     print(f"dropped: {dropped_dirty} dirty (MSA/Arabic/too-short), {dropped_dup} duplicates")
+    audit_duplicates()
     print(f"Next: python dataset/tools/review.py --in aigenerateddataset/cs_pairs.jsonl --reviewer <name>")
 
 
