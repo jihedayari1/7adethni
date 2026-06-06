@@ -229,9 +229,7 @@ def next_task(i: int, cs_ratio: float):
     """Interleave customer_service and general tasks by ratio (deterministic round-robin)."""
     cs_topics = list(CS_INTENTS.items())
     gen_topics = list(GENERAL_TOPICS.items())
-    # decide category by comparing running share to target ratio
-    is_cs = ((i * cs_ratio) % 1.0) >= (1.0 - cs_ratio) or (cs_ratio >= 0.999)
-    # simpler stable scheme: every 1/cs_ratio-th item is CS
+    # every 1/cs_ratio-th item is customer_service (deterministic, well-spread)
     is_cs = (cs_ratio > 0) and (int((i + 1) * cs_ratio) > int(i * cs_ratio))
     if is_cs:
         topic, desc = cs_topics[i % len(cs_topics)]
