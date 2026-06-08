@@ -1,0 +1,243 @@
+#!/usr/bin/env python3
+"""Builds training/tunisian_finetune_kaggle.ipynb (reliable JSON, no manual escaping)."""
+import json
+from pathlib import Path
+
+def md(*src):  return {"cell_type": "markdown", "metadata": {}, "source": list(src)}
+def code(*src): return {"cell_type": "code", "metadata": {}, "execution_count": None, "outputs": [], "source": list(src)}
+
+cells = []
+
+cells.append(md(
+"# 🇹🇳 Tunisian Arabizi Assistant — Fine-tune + Evaluate (Kaggle)\n",
+"\n",
+"This notebook **trains** a Tunisian-Derja (Arabizi) assistant on your dataset, **measures** how\n",
+"good the data is (dialect-rate **before vs after** training), and lets you **chat** with the model.\n",
+"\n",
+"## Before you run (one-time setup)\n",
+"1. **Upload your data as a Kaggle Dataset**: the 3 files `cs_pairs.jsonl`, `parallel_pairs.jsonl`,\n",
+"   `eval_set.jsonl` (drag-and-drop → *+ Add Data* → *New Dataset*). \n",
+"2. Right panel → **Accelerator: GPU T4 x2** (or P100). \n",
+"3. Right panel → **Internet: ON** (needed to install Unsloth + download the model). \n",
+"4. **Run All**. Training a ~10k-pair smoke test takes ~30–60 min on a T4.\n",
+"\n",
+"> This is a **dataset-efficiency test**. A 7B model is used for a representative result; switch the\n",
+"> `MODEL_NAME` in the config cell to Qwen3-8B for the real v1, or Qwen2.5-3B for a faster run.\n"
+))
+
+cells.append(md("## 1. Install (Unsloth = fast, low-VRAM QLoRA)"))
+cells.append(code(
+"%%capture\n",
+"# Unsloth handles QLoRA on a single T4 efficiently. trl/peft come with it.\n",
+"!pip install -q \"unsloth[kaggle-new]\" 2>/dev/null || pip install -q unsloth\n",
+"!pip install -q --no-deps trl peft accelerate bitsandbytes\n"
+))
+
+cells.append(md("## 2. Config — change models / sizes here"))
+cells.append(code(
+"# ---- Model (4-bit, Unsloth). Safe default for free T4. ----\n",
+"MODEL_NAME       = 'unsloth/Qwen2.5-7B-Instruct-bnb-4bit'\n",
+"#  alternatives: 'unsloth/Qwen3-8B-bnb-4bit' (real v1, heavier) | 'unsloth/Qwen2.5-3B-Instruct-bnb-4bit' (fast)\n",
+"MAX_SEQ_LEN      = 1024\n",
+"\n",
+"# ---- Data mixing (our strategy: conversation is the core; sample the parallel) ----\n",
+"CONV_UPSAMPLE    = 3       # repeat the hand-written conversational pairs N times (they're the priority)\n",
+"PARALLEL_SAMPLE  = 8000    # how many translation/comprehension pairs to mix in\n",
+"\n",
+"# ---- Training ----\n",
+"EPOCHS           = 2\n",
+"LR               = 2e-4\n",
+"BATCH            = 2\n",
+"GRAD_ACCUM       = 4\n",
+"\n",
+"# ---- Eval ----\n",
+"EVAL_MAX_NEW     = 160\n",
+"\n",
+"SYSTEM = ('Enti assistant tunsi (service client w 7adith 3am). Jaweb DIMA bel derja tounsiya '\n",
+"          'bel arabizi (7ourouf latiniya w arqam), b tari9a tabi3iya w 9sira. Ken el user yekteb '\n",
+"          'bel 3arbi wala faransi wala anglais, efhem w jaweb bel arabizi. Ken talbou translation, '\n",
+"          'a3mel el li talbou.')\n",
+"print('config ready ->', MODEL_NAME)\n"
+))
+
+cells.append(md("## 3. Load + mix + format the data"))
+cells.append(code(
+"import json, glob, random\n",
+"random.seed(42)\n",
+"\n",
+"def find(name):\n",
+"    hits = glob.glob(f'/kaggle/input/**/{name}', recursive=True)\n",
+"    if not hits: raise FileNotFoundError(f'{name} not found under /kaggle/input — upload your dataset')\n",
+"    return hits[0]\n",
+"\n",
+"def load_jsonl(p):\n",
+"    return [json.loads(l) for l in open(p, encoding='utf-8') if l.strip()]\n",
+"\n",
+"conv = load_jsonl(find('cs_pairs.jsonl'))\n",
+"par  = load_jsonl(find('parallel_pairs.jsonl'))\n",
+"random.shuffle(par)\n",
+"par = par[:PARALLEL_SAMPLE]\n",
+"train_rows = conv * CONV_UPSAMPLE + par\n",
+"random.shuffle(train_rows)\n",
+"print(f'conversational: {len(conv)} x{CONV_UPSAMPLE} | parallel sampled: {len(par)} | TOTAL train: {len(train_rows)}')\n",
+"\n",
+"def to_text(tokenizer, r):\n",
+"    msgs = [{'role':'system','content':SYSTEM},\n",
+"            {'role':'user','content':r['instruction']},\n",
+"            {'role':'assistant','content':r['output']}]\n",
+"    return tokenizer.apply_chat_template(msgs, tokenize=False)\n"
+))
+
+cells.append(md("## 4. Load the model + attach LoRA adapters"))
+cells.append(code(
+"from unsloth import FastLanguageModel\n",
+"import torch\n",
+"\n",
+"model, tokenizer = FastLanguageModel.from_pretrained(\n",
+"    model_name = MODEL_NAME,\n",
+"    max_seq_length = MAX_SEQ_LEN,\n",
+"    load_in_4bit = True,\n",
+")\n",
+"model = FastLanguageModel.get_peft_model(\n",
+"    model, r = 16, lora_alpha = 16, lora_dropout = 0,\n",
+"    target_modules = ['q_proj','k_proj','v_proj','o_proj','gate_proj','up_proj','down_proj'],\n",
+"    use_gradient_checkpointing = 'unsloth', random_state = 42,\n",
+")\n",
+"print('model loaded + LoRA attached')\n"
+))
+
+cells.append(md("## 5. Helper to chat with the model (used for baseline + final test)"))
+cells.append(code(
+"def generate(user_msg, system=SYSTEM, max_new_tokens=EVAL_MAX_NEW, temperature=0.7):\n",
+"    FastLanguageModel.for_inference(model)\n",
+"    msgs = [{'role':'system','content':system},{'role':'user','content':user_msg}]\n",
+"    ids = tokenizer.apply_chat_template(msgs, add_generation_prompt=True, return_tensors='pt').to('cuda')\n",
+"    out = model.generate(input_ids=ids, max_new_tokens=max_new_tokens, do_sample=True,\n",
+"                         temperature=temperature, top_p=0.9, repetition_penalty=1.1,\n",
+"                         pad_token_id=tokenizer.eos_token_id)\n",
+"    return tokenizer.decode(out[0][ids.shape[1]:], skip_special_tokens=True).strip()\n"
+))
+
+cells.append(md("## 6. Dialect-rate metric (MSA-leakage detector, inline)"))
+cells.append(code(
+"import re\n",
+"TUNISIAN = set('barcha famma chnowa chnoua 9addech 9adech kifech 3lech win wa9tech ya5i 5ouya mte3 '\n",
+"  'mta3 bch taw tawa ken kima brabi 3aslama 3aslema marhba chwaya barka fissa3 zin behi bahi mli7 '\n",
+"  '3andi 3andou 3andek hethi hetha hakka haka sa7a 3aychek yezzi 9a3ed mch mouch ma3andich n7eb t7eb '\n",
+"  '9olli ya3ni fel lel el enti ena houwa hia 9ahwa ghodwa lyoum wala 5dma 5edma dar bnin tounsi'.split())\n",
+"FRENCH = set('livraison prix commande merci bonjour stock weekend promo garantie couleur taille'.split())\n",
+"MSA = set('hadha hadhihi alladhi allati sawfa laysa kayfa limadha 3indama ladhalika lakinna jiddan '\n",
+"  'kathiran yumkinu yajibu na7nu inna sayakun dhalika tilka hunaka faqat aydan ladayna lan lam qad'.split())\n",
+"MSA_AR = ['الذي','التي','سوف','ليس','كيف','عندما','لذلك','يمكن','يجب','نحن','جدا','هذا','هذه','ذلك']\n",
+"_AR = re.compile(r'[\\u0600-\\u06ff]'); _NUM = re.compile(r\"[a-z][3-9'][a-z]\", re.I); _W = re.compile(r\"[a-z0-9'7359]+\", re.I)\n",
+"def score_text(t):\n",
+"    t=(t or '').strip(); toks=set(w.lower() for w in _W.findall(t))\n",
+"    tun=len(toks&TUNISIAN)+len(toks&FRENCH)+len(_NUM.findall(t.lower()))\n",
+"    msa=len(toks&MSA)+sum(t.count(m) for m in MSA_AR)\n",
+"    if _AR.search(t) and not (toks&TUNISIAN): return 'arabic_script'\n",
+"    if tun==0 and msa==0: return 'unknown'\n",
+"    if msa>0 and tun==0: return 'msa_leak'\n",
+"    if tun>0 and msa==0: return 'tunisian'\n",
+"    return 'tunisian' if tun>=2*msa else 'mixed'\n",
+"def dialect_report(preds, tag=''):\n",
+"    from collections import Counter\n",
+"    c=Counter(score_text(p) for p in preds); n=len(preds) or 1\n",
+"    print(f'--- {tag} (n={len(preds)}) ---')\n",
+"    for k in ['tunisian','mixed','msa_leak','arabic_script','unknown']:\n",
+"        print(f'  {k:14}: {c.get(k,0):4}  ({c.get(k,0)/n:.0%})')\n",
+"    rate=c.get('tunisian',0)/n; print(f'  >> DIALECT RATE: {rate:.0%}')\n",
+"    return rate\n"
+))
+
+cells.append(md("## 7. BASELINE — how Tunisian is the model *before* training?\n",
+"(Run the untrained model on the eval prompts. Expect a LOW dialect rate — it'll lean MSA/English.)"))
+cells.append(code(
+"eval_rows = load_jsonl(find('eval_set.jsonl'))\n",
+"print(f'eval items: {len(eval_rows)}')\n",
+"base_preds = [generate(r['instruction']) for r in eval_rows]\n",
+"base_rate = dialect_report(base_preds, 'BASELINE (before fine-tuning)')\n"
+))
+
+cells.append(md("## 8. Train (QLoRA / SFT)"))
+cells.append(code(
+"from trl import SFTTrainer\n",
+"from transformers import TrainingArguments\n",
+"from datasets import Dataset\n",
+"\n",
+"FastLanguageModel.for_training(model)\n",
+"ds = Dataset.from_dict({'text': [to_text(tokenizer, r) for r in train_rows]})\n",
+"\n",
+"trainer = SFTTrainer(\n",
+"    model = model, tokenizer = tokenizer, train_dataset = ds,\n",
+"    dataset_text_field = 'text', max_seq_length = MAX_SEQ_LEN, packing = False,\n",
+"    args = TrainingArguments(\n",
+"        per_device_train_batch_size = BATCH, gradient_accumulation_steps = GRAD_ACCUM,\n",
+"        warmup_steps = 10, num_train_epochs = EPOCHS, learning_rate = LR,\n",
+"        fp16 = not torch.cuda.is_bf16_supported(), bf16 = torch.cuda.is_bf16_supported(),\n",
+"        logging_steps = 20, optim = 'adamw_8bit', weight_decay = 0.01,\n",
+"        lr_scheduler_type = 'linear', seed = 42, output_dir = 'outputs', report_to = 'none',\n",
+"    ),\n",
+")\n",
+"# train only on the assistant's reply (better signal); fall back to full-text if unavailable\n",
+"try:\n",
+"    from unsloth.chat_templates import train_on_responses_only\n",
+"    trainer = train_on_responses_only(trainer,\n",
+"        instruction_part='<|im_start|>user\\n', response_part='<|im_start|>assistant\\n')\n",
+"except Exception as e:\n",
+"    print('train_on_responses_only skipped:', e)\n",
+"\n",
+"trainer.train()\n"
+))
+
+cells.append(md("## 9. Save the LoRA adapter (download it after the run)"))
+cells.append(code(
+"model.save_pretrained('/kaggle/working/tunisian_lora')\n",
+"tokenizer.save_pretrained('/kaggle/working/tunisian_lora')\n",
+"print('saved -> /kaggle/working/tunisian_lora  (download from the Output tab)')\n"
+))
+
+cells.append(md("## 10. AFTER — measure dialect rate *after* training (the dataset-efficiency result)"))
+cells.append(code(
+"after_preds = [generate(r['instruction']) for r in eval_rows]\n",
+"after_rate = dialect_report(after_preds, 'AFTER fine-tuning')\n",
+"print(f'\\n=== DATASET EFFICIENCY ===')\n",
+"print(f'dialect rate  BEFORE: {base_rate:.0%}   AFTER: {after_rate:.0%}   (+{(after_rate-base_rate)*100:.0f} pts)')\n",
+"print('\\n--- 8 sample before/after ---')\n",
+"for r, b, a in list(zip(eval_rows, base_preds, after_preds))[:8]:\n",
+"    print('Q  :', r['instruction'][:70])\n",
+"    print('OLD:', b[:90]); print('NEW:', a[:90]); print()\n"
+))
+
+cells.append(md("## 11. Talk to your model 🇹🇳\n",
+"Edit the message and re-run. It understands Arabizi, Arabic letters, French, and English."))
+cells.append(code(
+"for msg in ['3aslema chna7welek?',\n",
+"            'قداش تمن التوصيل لصفاقس؟',\n",
+"            'give me a healthy breakfast idea',\n",
+"            '9olli nokta tdha7ek',\n",
+"            'a7kili 7keya 9sira 3la el sabr']:\n",
+"    print('🧑', msg)\n",
+"    print('🤖', generate(msg), '\\n')\n"
+))
+cells.append(code(
+"# >>> your turn: change this and re-run <<<\n",
+"print(generate('3andi mochkla fel commande mte3i, chnowa na3mel?'))\n"
+))
+
+cells.append(md(
+"## 12. What next\n",
+"- **Read the BEFORE→AFTER dialect rate** above — that's your dataset efficiency. A big jump = the data works.\n",
+"- Look at the sample answers: are they natural Tunisian? note weak categories.\n",
+"- **Download** `/kaggle/working/tunisian_lora` (Output tab) — that's your trained adapter.\n",
+"- Improve the weakest axis (more pairs there), regenerate, re-run. That's the measure→improve loop.\n",
+"- For the real v1: set `MODEL_NAME='unsloth/Qwen3-8B-bnb-4bit'` and grow the data.\n"
+))
+
+nb = {"cells": cells,
+      "metadata": {"kernelspec": {"display_name": "Python 3", "language": "python", "name": "python3"},
+                   "language_info": {"name": "python"}, "accelerator": "GPU"},
+      "nbformat": 4, "nbformat_minor": 5}
+
+out = Path(__file__).parent / "tunisian_finetune_kaggle.ipynb"
+out.write_text(json.dumps(nb, ensure_ascii=False, indent=1), encoding="utf-8")
+print("wrote", out, "with", len(cells), "cells")
