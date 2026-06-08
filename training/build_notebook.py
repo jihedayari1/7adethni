@@ -28,9 +28,11 @@ cells.append(md(
 cells.append(md("## 1. Install (Unsloth = fast, low-VRAM QLoRA)"))
 cells.append(code(
 "%%capture\n",
-"# Unsloth handles QLoRA on a single T4 efficiently. trl/peft come with it.\n",
-"!pip install -q \"unsloth[kaggle-new]\" 2>/dev/null || pip install -q unsloth\n",
-"!pip install -q --no-deps trl peft accelerate bitsandbytes\n"
+"# Unsloth handles QLoRA on a single T4 efficiently. Use LATEST unsloth + unsloth_zoo:\n",
+"# older combos hit \"'int' object has no attribute 'mean'\" in the training step.\n",
+"!pip install -q -U unsloth unsloth_zoo\n",
+"!pip install -q --no-deps trl peft accelerate bitsandbytes\n",
+"import shutil; shutil.rmtree('/kaggle/working/unsloth_compiled_cache', ignore_errors=True)\n"
 ))
 
 cells.append(md("## 2. Config — change models / sizes here"))
@@ -48,7 +50,7 @@ cells.append(code(
 "EPOCHS           = 2\n",
 "LR               = 2e-4\n",
 "BATCH            = 2\n",
-"GRAD_ACCUM       = 4\n",
+"GRAD_ACCUM       = 1       # keep at 1: >1 can trigger an Unsloth num_items_in_batch bug\n",
 "\n",
 "# ---- Eval ----\n",
 "EVAL_MAX_NEW     = 160\n",
