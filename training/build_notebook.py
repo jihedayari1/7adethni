@@ -178,13 +178,13 @@ cells.append(code(
 "        lr_scheduler_type = 'linear', seed = 42, output_dir = 'outputs', report_to = 'none',\n",
 "    ),\n",
 ")\n",
-"# train only on the assistant's reply (better signal); fall back to full-text if unavailable\n",
-"try:\n",
+"# NOTE: 'train_on_responses_only' can trigger \\\"'int' object has no attribute 'mean'\\\" on some\n",
+"# transformers/trl versions (it masks the batch oddly). Default OFF -> full-text SFT, robust.\n",
+"USE_RESPONSES_ONLY = False\n",
+"if USE_RESPONSES_ONLY:\n",
 "    from unsloth.chat_templates import train_on_responses_only\n",
 "    trainer = train_on_responses_only(trainer,\n",
 "        instruction_part='<|im_start|>user\\n', response_part='<|im_start|>assistant\\n')\n",
-"except Exception as e:\n",
-"    print('train_on_responses_only skipped:', e)\n",
 "\n",
 "trainer.train()\n"
 ))
