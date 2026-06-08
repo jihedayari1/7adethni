@@ -28,10 +28,12 @@ cells.append(md(
 cells.append(md("## 1. Install (Unsloth = fast, low-VRAM QLoRA)"))
 cells.append(code(
 "%%capture\n",
-"# Unsloth handles QLoRA on a single T4 efficiently. Use LATEST unsloth + unsloth_zoo:\n",
-"# older combos hit \"'int' object has no attribute 'mean'\" in the training step.\n",
+"# Unsloth handles QLoRA on a single T4 efficiently.\n",
 "!pip install -q -U unsloth unsloth_zoo\n",
 "!pip install -q --no-deps trl peft accelerate bitsandbytes\n",
+"# CRITICAL: transformers v5 breaks Unsloth's training step (\"'int' object has no attribute\n",
+"# 'mean'\"). Pin to 4.x. Run this AS THE FIRST CELL, then RESTART the kernel, then Run All.\n",
+"!pip install -q \"transformers<5\"\n",
 "import shutil; shutil.rmtree('/kaggle/working/unsloth_compiled_cache', ignore_errors=True)\n"
 ))
 
