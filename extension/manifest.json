@@ -3,8 +3,12 @@
   "name": "7adethni — Tunisian Arabizi writer",
   "version": "0.1.0",
   "description": "Write posts, replies, captions and more in natural Tunisian Derja (Arabizi).",
-  "action": { "default_popup": "popup.html", "default_title": "7adethni" },
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "7adethni",
+    "default_icon": { "16": "icon16.png", "48": "icon48.png", "128": "icon128.png" }
+  },
   "permissions": ["storage"],
   "host_permissions": ["http://localhost/*", "https://*/*"],
-  "icons": { "128": "icon128.png" }
+  "icons": { "16": "icon16.png", "48": "icon48.png", "128": "icon128.png" }
 }

@@ -1,0 +1,40 @@
+<svg width="512" height="512" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#E70013"/>
+      <stop offset="1" stop-color="#C2502F"/>
+    </linearGradient>
+    <linearGradient id="seven" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#E70013"/>
+      <stop offset="1" stop-color="#FF3B4E"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="0.3" cy="0.22" r="0.9">
+      <stop offset="0" stop-color="#ffffff" stop-opacity="0.18"/>
+      <stop offset="1" stop-color="#ffffff" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+
+  <!-- tile -->
+  <rect x="16" y="16" width="480" height="480" rx="118" fill="url(#bg)"/>
+  <rect x="16" y="16" width="480" height="480" rx="118" fill="url(#glow)"/>
+
+  <!-- speech bubble (talk = 7adethni) -->
+  <g>
+    <path d="M150 318 L150 398 L222 332 Z" fill="#ffffff"/>
+    <rect x="104" y="112" width="304" height="214" rx="54" fill="#ffffff"/>
+  </g>
+
+  <!-- the "7" -->
+  <g fill="url(#seven)">
+    <rect x="168" y="156" width="180" height="48" rx="10"/>
+    <polygon points="348,156 300,156 214,296 262,296"/>
+  </g>
+
+  <!-- AI sparkle -->
+  <path d="M386 120
+           C 392 146, 404 158, 430 164
+           C 404 170, 392 182, 386 208
+           C 380 182, 368 170, 342 164
+           C 368 158, 380 146, 386 120 Z"
+        fill="#F4D35E"/>
+</svg>
