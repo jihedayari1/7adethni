@@ -1,0 +1,21 @@
+* { box-sizing: border-box; font-family: system-ui, sans-serif; }
+body { width: 340px; margin: 0; padding: 12px; background: #faf8f3; color: #1d1d1f; }
+header { display: flex; align-items: center; justify-content: space-between; }
+h1 { font-size: 18px; margin: 0 0 8px; }
+button { cursor: pointer; border: none; border-radius: 8px; padding: 8px 12px; font-size: 14px; }
+#go { width: 100%; background: #c0392b; color: #fff; font-weight: 600; margin-top: 8px; }
+#go:disabled { opacity: .6; cursor: default; }
+#settingsBtn { background: transparent; font-size: 16px; padding: 4px; }
+.row { display: flex; align-items: center; justify-content: space-between; margin: 6px 0; }
+.row span { font-size: 13px; color: #555; }
+select, input, textarea { border: 1px solid #ddd; border-radius: 8px; padding: 7px; font-size: 14px; }
+select { width: 200px; }
+textarea { width: 100%; margin-top: 6px; resize: vertical; }
+.output { white-space: pre-wrap; background: #fff; border: 1px solid #eee; border-radius: 8px;
+  padding: 10px; margin-top: 10px; font-size: 15px; line-height: 1.5; }
+.muted { color: #888; font-size: 12px; min-height: 16px; margin-top: 6px; }
+.hidden { display: none; }
+#settings { background: #fff; border: 1px solid #eee; border-radius: 8px; padding: 10px; margin: 6px 0; }
+#settings label { display: block; font-size: 12px; margin-bottom: 8px; }
+#settings input { width: 100%; margin-top: 3px; }
+#copy { background: #eee; margin-top: 8px; }

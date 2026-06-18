@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <link rel="stylesheet" href="popup.css" />
+</head>
+<body>
+  <header>
+    <h1>7adethni 🇹🇳</h1>
+    <button id="settingsBtn" title="Settings">⚙️</button>
+  </header>
+
+  <div id="settings" class="hidden">
+    <label>API URL <input id="apiUrl" placeholder="http://localhost:8000" /></label>
+    <label>API key (optional) <input id="apiKey" placeholder="" /></label>
+    <button id="saveSettings">Save</button>
+  </div>
+
+  <label class="row">
+    <span>Feature</span>
+    <select id="feature">
+      <option value="post">Write a post</option>
+      <option value="reply">Reply to a message</option>
+      <option value="rewrite">Rewrite / improve</option>
+      <option value="translate">Translate to Derja</option>
+      <option value="caption">Caption</option>
+      <option value="idea">Ask / free text</option>
+    </select>
+  </label>
+
+  <label class="row">
+    <span>Tone</span>
+    <select id="tone">
+      <option value="normal">3adi</option>
+      <option value="funny">Morfeh 😄</option>
+      <option value="formal">Rasmi</option>
+      <option value="promo">Promo 🛍️</option>
+      <option value="warm">7anin 🤍</option>
+      <option value="short">9sir</option>
+    </select>
+  </label>
+
+  <textarea id="input" rows="4" placeholder="Ekteb el mawdou3 / el message / el nass heni..."></textarea>
+  <button id="go">Génère bel tounsi ✨</button>
+
+  <div id="status" class="muted"></div>
+  <div id="output" class="output hidden"></div>
+  <button id="copy" class="hidden">Copy 📋</button>
+
+  <script src="popup.js"></script>
+</body>
+</html>
