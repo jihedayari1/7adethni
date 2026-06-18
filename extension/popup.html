@@ -2,51 +2,92 @@
 <html lang="en">
 <head>
   <meta charset="utf-8" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Sora:wght@600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="popup.css" />
 </head>
 <body>
-  <header>
-    <h1>7adethni 🇹🇳</h1>
-    <button id="settingsBtn" title="Settings">⚙️</button>
-  </header>
+  <div class="app">
+    <!-- HEADER -->
+    <header class="hero">
+      <div class="hero__pattern" aria-hidden="true"></div>
+      <div class="hero__top">
+        <div class="brand">
+          <span class="brand__mark">7</span>
+          <div class="brand__txt">
+            <h1>7adethni <span class="flag">🇹🇳</span></h1>
+            <p>el AI el tounsi — ekteb bel derja b style ✨</p>
+          </div>
+        </div>
+        <div class="hero__actions">
+          <button id="quota" class="chip chip--quota" title="génération mejjeniya">15/15 🎁</button>
+          <button id="settingsBtn" class="icon-btn" aria-label="Settings" title="Réglages">⚙️</button>
+        </div>
+      </div>
+    </header>
 
-  <div id="settings" class="hidden">
-    <label>API URL <input id="apiUrl" placeholder="http://localhost:8000" /></label>
-    <label>API key (optional) <input id="apiKey" placeholder="" /></label>
-    <button id="saveSettings">Save</button>
+    <!-- SETTINGS -->
+    <section id="settings" class="panel hidden">
+      <label>API URL
+        <input id="apiUrl" placeholder="http://localhost:9000" />
+      </label>
+      <button id="saveSettings" class="btn-ghost">Save</button>
+    </section>
+
+    <main class="body">
+      <!-- FEATURE PILLS -->
+      <nav class="features" id="features" aria-label="Features">
+        <button class="pill is-active" data-feat="post">📝 Post</button>
+        <button class="pill" data-feat="reply">💬 Reply</button>
+        <button class="pill" data-feat="rewrite">✨ Rewrite</button>
+        <button class="pill" data-feat="translate">🔁 Derja</button>
+        <button class="pill" data-feat="caption">🖼️ Caption</button>
+        <button class="pill" data-feat="idea">💡 Ask</button>
+      </nav>
+
+      <!-- TONE CHIPS -->
+      <div class="tones" id="tones" aria-label="Tone">
+        <button class="tone is-active" data-tone="normal">3adi</button>
+        <button class="tone" data-tone="funny">Morfeh 😄</button>
+        <button class="tone" data-tone="formal">Rasmi</button>
+        <button class="tone" data-tone="promo">Promo 🛍️</button>
+        <button class="tone" data-tone="warm">7anin 🤍</button>
+        <button class="tone" data-tone="short">9sir</button>
+      </div>
+
+      <!-- INPUT -->
+      <div class="input-wrap">
+        <textarea id="input" rows="3" placeholder="Ekteb el mawdou3 / el message heni..."></textarea>
+      </div>
+
+      <!-- CTA -->
+      <button id="go" class="cta">
+        <span class="cta__label">Génère bel tounsi</span>
+        <span class="cta__spark">✨</span>
+        <span class="cta__dots" aria-hidden="true"><i></i><i></i><i></i></span>
+      </button>
+
+      <!-- OUTPUT -->
+      <section id="outBlock" class="out">
+        <div class="out__head">
+          <span class="out__tag">⭐ Essai</span>
+        </div>
+        <div id="output" class="out__card">3aslema w marhba bik fi 7adethni 🌟 ekteb 7aja w ena n7awwelha l derja tounsiya zina. jarreb taw!</div>
+        <div class="out__actions">
+          <button id="copy" class="act">📋 Copy</button>
+          <button id="regen" class="act">🔄 3awed</button>
+          <span class="spacer"></span>
+          <button id="fbGood" class="act act--icon" title="Behi">👍</button>
+          <button id="fbFix" class="act act--icon" title="Sa77a7">✏️</button>
+        </div>
+      </section>
+
+      <div id="status" class="status" role="status"></div>
+    </main>
+
+    <footer class="foot">7adethni — el AI el tounsi 🇹🇳</footer>
   </div>
-
-  <label class="row">
-    <span>Feature</span>
-    <select id="feature">
-      <option value="post">Write a post</option>
-      <option value="reply">Reply to a message</option>
-      <option value="rewrite">Rewrite / improve</option>
-      <option value="translate">Translate to Derja</option>
-      <option value="caption">Caption</option>
-      <option value="idea">Ask / free text</option>
-    </select>
-  </label>
-
-  <label class="row">
-    <span>Tone</span>
-    <select id="tone">
-      <option value="normal">3adi</option>
-      <option value="funny">Morfeh 😄</option>
-      <option value="formal">Rasmi</option>
-      <option value="promo">Promo 🛍️</option>
-      <option value="warm">7anin 🤍</option>
-      <option value="short">9sir</option>
-    </select>
-  </label>
-
-  <textarea id="input" rows="4" placeholder="Ekteb el mawdou3 / el message / el nass heni..."></textarea>
-  <button id="go">Génère bel tounsi ✨</button>
-
-  <div id="status" class="muted"></div>
-  <div id="output" class="output hidden"></div>
-  <button id="copy" class="hidden">Copy 📋</button>
-
   <script src="popup.js"></script>
 </body>
 </html>
