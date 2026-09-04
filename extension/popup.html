@@ -2,9 +2,11 @@
 <html lang="en">
 <head>
   <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>7adethni</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Sora:wght@600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Hanken+Grotesk:wght@400;500;600;700;800&family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="popup.css" />
 </head>
 <body>
@@ -36,29 +38,23 @@
     </section>
 
     <main class="body">
-      <!-- FEATURE PILLS -->
+      <!-- FEATURE PILLS (MVP: 3 features, translate = hero) -->
       <nav class="features" id="features" aria-label="Features">
-        <button class="pill is-active" data-feat="post">📝 Post</button>
+        <button class="pill is-active" data-feat="translate">🔁 Derja</button>
         <button class="pill" data-feat="reply">💬 Reply</button>
         <button class="pill" data-feat="rewrite">✨ Rewrite</button>
-        <button class="pill" data-feat="translate">🔁 Derja</button>
-        <button class="pill" data-feat="caption">🖼️ Caption</button>
-        <button class="pill" data-feat="idea">💡 Ask</button>
       </nav>
 
-      <!-- TONE CHIPS -->
+      <!-- TONE CHIPS (MVP: 3 tones) -->
       <div class="tones" id="tones" aria-label="Tone">
         <button class="tone is-active" data-tone="normal">3adi</button>
         <button class="tone" data-tone="funny">Morfeh 😄</button>
         <button class="tone" data-tone="formal">Rasmi</button>
-        <button class="tone" data-tone="promo">Promo 🛍️</button>
-        <button class="tone" data-tone="warm">7anin 🤍</button>
-        <button class="tone" data-tone="short">9sir</button>
       </div>
 
       <!-- INPUT -->
       <div class="input-wrap">
-        <textarea id="input" rows="3" placeholder="Ekteb el mawdou3 / el message heni..."></textarea>
+        <textarea id="input" rows="3" placeholder="Ekteb bel français / english / العربية... w n7awlouhalek l derja 🇹🇳"></textarea>
       </div>
 
       <!-- CTA -->
@@ -68,12 +64,13 @@
         <span class="cta__dots" aria-hidden="true"><i></i><i></i><i></i></span>
       </button>
 
-      <!-- OUTPUT -->
+      <!-- OUTPUT (editable — edits before copy are logged as implicit corrections) -->
       <section id="outBlock" class="out">
         <div class="out__head">
           <span class="out__tag">⭐ Essai</span>
+          <span class="out__hint">✏️ tnajjem tbaddel fih 9bal ma t-copi</span>
         </div>
-        <div id="output" class="out__card">3aslema w marhba bik fi 7adethni 🌟 ekteb 7aja w ena n7awwelha l derja tounsiya zina. jarreb taw!</div>
+        <div id="output" class="out__card" contenteditable="true" spellcheck="false">3aslema w marhba bik fi 7adethni 🌟 ekteb 7aja w ena n7awwelha l derja tounsiya zina. jarreb taw!</div>
         <div class="out__actions">
           <button id="copy" class="act">📋 Copy</button>
           <button id="regen" class="act">🔄 3awed</button>

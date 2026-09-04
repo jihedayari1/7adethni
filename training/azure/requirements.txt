@@ -1,0 +1,12 @@
+torch>=2.1
+transformers==4.51.3
+peft>=0.12
+accelerate>=0.30
+datasets>=2.19
+bitsandbytes>=0.43
+sentencepiece
+rapidfuzz>=3
+pandas
+pyarrow
+# optional, ~30% faster on A100/H100:
+# pip install flash-attn --no-build-isolation

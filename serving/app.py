@@ -20,6 +20,7 @@ from transformers import AutoModelForCausalLM, AutoTokenizer, BitsAndBytesConfig
 from peft import PeftModel
 
 from prompts import build_messages, FEATURE_LABELS
+from grounding import quality, canonicalize, input_meanings, pick_best
 
 BASE_MODEL  = os.environ.get("BASE_MODEL", "Qwen/Qwen2.5-7B-Instruct")
 ADAPTER_DIR = os.environ.get("ADAPTER_DIR", "./tunisian_lora")
@@ -54,6 +55,8 @@ class GenReq(BaseModel):
     tone: str = "normal"
     max_new_tokens: int = 220
     temperature: float = 0.75
+    candidates: int = 3        # best-of-N: generate N, return the most coherent
+    ground: bool = True        # score against the lexicon + inject input meanings
 
 
 @app.on_event("startup")
@@ -66,6 +69,16 @@ def health():
     return {"ok": _model is not None, "base": BASE_MODEL, "features": list(FEATURE_LABELS)}
 
 
+def _generate_once(ids, temperature, max_new_tokens):
+    with torch.no_grad():
+        out = _model.generate(
+            input_ids=ids, attention_mask=torch.ones_like(ids),
+            max_new_tokens=min(max_new_tokens, 400), do_sample=True,
+            temperature=temperature, top_p=0.9, repetition_penalty=1.1,
+            pad_token_id=_tokenizer.eos_token_id)
+    return _tokenizer.decode(out[0][ids.shape[1]:], skip_special_tokens=True).strip()
+
+
 @app.post("/generate")
 def generate(req: GenReq, x_api_key: str | None = Header(default=None)):
     if API_KEYS and x_api_key not in API_KEYS:
@@ -73,13 +86,24 @@ def generate(req: GenReq, x_api_key: str | None = Header(default=None)):
     if not (req.text or "").strip():
         raise HTTPException(400, "text is empty")
     _load()
-    msgs = build_messages(req.feature, req.text, req.tone)
+
+    # comprehension grounding: tell the model what slang in the INPUT means
+    context = input_meanings(req.text) if req.ground else ""
+    msgs = build_messages(req.feature, req.text, req.tone, context=context)
     ids = _tokenizer.apply_chat_template(msgs, add_generation_prompt=True, return_tensors="pt").to(_model.device)
-    with torch.no_grad():
-        out = _model.generate(
-            input_ids=ids, attention_mask=torch.ones_like(ids),
-            max_new_tokens=min(req.max_new_tokens, 400), do_sample=True,
-            temperature=req.temperature, top_p=0.9, repetition_penalty=1.1,
-            pad_token_id=_tokenizer.eos_token_id)
-    text = _tokenizer.decode(out[0][ids.shape[1]:], skip_special_tokens=True).strip()
-    return {"feature": req.feature, "tone": req.tone, "output": text}
+
+    # best-of-N: a little temperature variety, then keep the most coherent (fewest invented words)
+    n = max(1, min(req.candidates, 4)) if req.ground else 1
+    temps = [req.temperature, 0.55, 0.9, 0.65][:n]
+    cands = [_generate_once(ids, t, req.max_new_tokens) for t in temps]
+
+    if req.ground and n > 1:
+        idx, q = pick_best(cands)
+        text = canonicalize(cands[idx])
+        q = quality(text)
+    else:
+        text = canonicalize(cands[0])
+        q = quality(text)
+
+    return {"feature": req.feature, "tone": req.tone, "output": text,
+            "quality": {"real_word_rate": round(q["rate"], 3), "oov": q["oov"]}}

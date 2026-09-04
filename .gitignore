@@ -22,10 +22,38 @@ __pycache__/
 # Local model caches (if semantic RAG is enabled)
 .cache/
 
-# Raw Facebook scrapes contain personal data - keep local, never push
+# Raw scrapes contain unstripped personal data - keep local, never push.
+# Only the PII-stripped *_pairs.jsonl outputs are safe to commit.
 dataset_facebook-comments-scraper_*.json
 facebook_raw/
+aigenerateddataset/yt_*.jsonl
+aigenerateddataset/_demo_threads.json
+**/raw_threads*.jsonl
 
 # vendored third-party repo
 vendor/
 cookies.txt
+
+# training data (large, regenerable via build scripts)
+corpus/corpus_clean.jsonl
+training/cpt.jsonl
+
+# ---- personal / non-project documents (never publish) ----
+Rapport Stage*.pdf
+Page Garde Rapport*.docx
+Guide*Journal Bord.pdf
+Cahiers_Fonctionnels*
+Groupe_Jihed_Ayari.csv
+~$*
+
+# ---- scraped conversation data: contains inline first names, keep private ----
+aigenerateddataset/real_conv_pairs.jsonl
+
+# ---- build/bundle artifacts ----
+7adethni_azure.zip
+7adethni_azure/
+7adethni_ Tunisian Arabizi Extensionn.zip
+7adethni_ Tunisian Arabizi Extensionn/
+
+# ---- internal notes not for the public repo ----
+docs/CREDITS_APPLICATIONS.md

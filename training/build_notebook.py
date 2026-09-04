@@ -9,15 +9,23 @@ def code(*s): return {"cell_type": "code", "metadata": {}, "execution_count": No
 cells = []
 
 cells.append(md(
-"# 🇹🇳 Tunisian Arabizi Assistant — Fine-tune + Evaluate (Kaggle, no-Unsloth)\n",
+"# 🇹🇳 Tunisian Arabizi Assistant — clean retrain (anti-overfit + real-data anchor)\n",
 "\n",
-"Standard HuggingFace **QLoRA** (transformers + peft + bitsandbytes). Robust — avoids the\n",
-"Unsloth training-step bug. Trains, measures **dialect-rate before vs after**, and lets you chat.\n",
+"Standard HuggingFace **QLoRA** (transformers + peft + bitsandbytes). This version fixes the\n",
+"last run, which **overfit** (loss started at 0.13) and produced fluent-looking **gibberish**.\n",
+"\n",
+"**What changed**\n",
+"- **Real-data anchor:** mixes `real_pairs.jsonl` (REAL human Arabizi from the lexicon — the model\n",
+"  can't invent words) with your conversational pairs, instead of synthetic-only.\n",
+"- **Anti-overfit:** 1 epoch, LR 1e-4, LoRA r=8, **no** conversation upsampling.\n",
+"- **Honest metric:** headline is **real-word rate** (vs the 17k lexicon), not the surface\n",
+"  'dialect rate' that read 96% on gibberish.\n",
 "\n",
 "## Setup (one-time)\n",
-"1. **+ Add Data → New Dataset** → upload `cs_pairs.jsonl`, `parallel_pairs.jsonl`, `eval_set.jsonl`.\n",
+"1. **+ Add Data → New Dataset** → upload `cs_pairs.jsonl`, `real_pairs.jsonl`, `eval_set.jsonl`,\n",
+"   **and `lexicon.jsonl`** (from `rag/`, needed for the real-word metric).\n",
 "2. Right panel: **Accelerator = GPU T4 x2**, **Internet = ON**.\n",
-"3. **Run All**. Default model is Qwen2.5-3B (fast + reliable on a T4); ~30–60 min.\n"
+"3. **Run All**. Qwen2.5-7B on a T4 ≈ 1.5–2.5 h.\n"
 ))
 
 cells.append(md("## 1. Install (pinned, no Unsloth)"))
@@ -32,11 +40,14 @@ cells.append(code(
 "#  faster/smaller test: 'Qwen/Qwen2.5-3B-Instruct' (then BATCH=2, GRAD_ACCUM=4)\n",
 "MAX_SEQ_LEN     = 1024\n",
 "\n",
-"CONV_UPSAMPLE   = 3       # conversation is the priority -> weight it\n",
-"PARALLEL_SAMPLE = 2000    # fewer translation pairs (they diluted coherence last run)\n",
+"# --- data mix ---------------------------------------------------------------\n",
+"CONV_UPSAMPLE   = 1       # NO upsampling (3x is what overfit the synthetic pairs last run)\n",
+"REAL_SAMPLE     = 4000    # real human Arabizi pairs -> anchor correct words/spelling\n",
 "\n",
-"EPOCHS          = 2\n",
-"LR              = 2e-4\n",
+"# --- anti-overfit -----------------------------------------------------------\n",
+"EPOCHS          = 1       # 1 epoch (loss started at 0.13 last run = already memorized)\n",
+"LR              = 1e-4    # gentler -> learn words, don't memorize phrasings\n",
+"LORA_R          = 8       # smaller adapter -> less capacity to overfit\n",
 "BATCH           = 1       # 7B on a single T4 needs batch 1\n",
 "GRAD_ACCUM      = 16      # effective batch = 16\n",
 "EVAL_MAX_NEW    = 200\n",
@@ -50,7 +61,7 @@ cells.append(code(
 
 cells.append(md("## 3. Load + mix the data"))
 cells.append(code(
-"import json, glob, random\n",
+"import json, glob, random, re\n",
 "random.seed(42)\n",
 "def find(name):\n",
 "    h = glob.glob(f'/kaggle/input/**/{name}', recursive=True)\n",
@@ -58,11 +69,31 @@ cells.append(code(
 "    return h[0]\n",
 "def load_jsonl(p): return [json.loads(l) for l in open(p, encoding='utf-8') if l.strip()]\n",
 "\n",
+"_AR = re.compile(r'[\\u0600-\\u06ff]')\n",
+"def _arabizi_out(t):\n",
+"    t = t or ''\n",
+"    if _AR.search(t): return False                          # arabic script -> skip\n",
+"    return bool(re.search(r\"[a-z][3579]|[3579][a-z]|\\b[3579]\\b\", t.lower()))  # has arabizi number-letters\n",
+"\n",
 "conv = load_jsonl(find('cs_pairs.jsonl'))\n",
-"par  = load_jsonl(find('parallel_pairs.jsonl')); random.shuffle(par); par = par[:PARALLEL_SAMPLE]\n",
-"train_rows = [{'instruction': r['instruction'], 'output': r['output']} for r in (conv*CONV_UPSAMPLE + par)]\n",
+"# OPTIONAL real conversational gold (dataset/tools/build_real_conv.py). Best coherence data\n",
+"# if you have it — folded into the conversational pool. Skipped silently if not uploaded.\n",
+"try:\n",
+"    rc = load_jsonl(find('real_conv_pairs.jsonl'))\n",
+"    conv = conv + [{'instruction': r['instruction'], 'output': r['output']} for r in rc]\n",
+"    print(f'+ real_conv {len(rc)} real comment->reply pairs folded into conversational pool')\n",
+"except FileNotFoundError:\n",
+"    pass\n",
+"# real human Arabizi anchor: keep ONLY pairs whose OUTPUT is Arabizi (English->Derja\n",
+"# generation). The comprehend/vocab pairs output English -> they'd teach the model to\n",
+"# answer in English, which is the opposite of what we want.\n",
+"real_all = load_jsonl(find('real_pairs.jsonl'))\n",
+"real = [{'instruction': r['instruction'], 'output': r['output']} for r in real_all if _arabizi_out(r['output'])]\n",
+"random.shuffle(real); real = real[:REAL_SAMPLE]\n",
+"rows = conv*CONV_UPSAMPLE + real\n",
+"train_rows = [{'instruction': r['instruction'], 'output': r['output']} for r in rows]\n",
 "random.shuffle(train_rows)\n",
-"print(f'conversational {len(conv)} x{CONV_UPSAMPLE} | parallel {len(par)} | TOTAL train {len(train_rows)}')\n"
+"print(f'conversational {len(conv)} x{CONV_UPSAMPLE} | real-anchor {len(real)} | TOTAL train {len(train_rows)}')\n"
 ))
 
 cells.append(md("## 4. Load model in 4-bit + attach LoRA"))
@@ -81,7 +112,7 @@ cells.append(code(
 "                                             device_map='auto', torch_dtype=torch.float16)\n",
 "model.config.use_cache = False\n",
 "model = prepare_model_for_kbit_training(model)\n",
-"lora = LoraConfig(r=16, lora_alpha=32, lora_dropout=0.05, bias='none', task_type='CAUSAL_LM',\n",
+"lora = LoraConfig(r=LORA_R, lora_alpha=LORA_R*2, lora_dropout=0.05, bias='none', task_type='CAUSAL_LM',\n",
 "    target_modules=['q_proj','k_proj','v_proj','o_proj','gate_proj','up_proj','down_proj'])\n",
 "model = get_peft_model(model, lora)\n",
 "model.print_trainable_parameters()\n"
@@ -128,12 +159,61 @@ cells.append(code(
 "    r=c.get('tunisian',0)/n; print(f'  >> DIALECT RATE: {r:.0%}'); return r\n"
 ))
 
-cells.append(md("## 7. BASELINE — dialect rate *before* training (expect very low)"))
+cells.append(md(
+"## 6b. Real-word rate (coherence) — the metric that actually catches gibberish\n",
+"Scores each output against the **17k lexicon** (real Arabizi words + their example sentences).\n",
+"Skeleton matching tolerates spelling variants; invented words (`najje9`, `njaafolek`) stay OOV."
+))
+cells.append(code(
+"import json, re\n",
+"def _norm(t):\n",
+"    t=t.lower(); t=re.sub(r\"[^\\w'89]\",'',t); t=re.sub(r'(.)\\1{2,}',r'\\1',t)\n",
+"    return t.replace('sh','ch').replace('kh','5')\n",
+"def _skel(k): return re.sub(r\"[aeiouy']\",'',k)\n",
+"_FUNC=set(('el la w f fi 3la 3al men mel l b bel ma mch mouch ena enti enta houwa hia a7na entouma houma '\n",
+"  'hethi hetha haka hakka ken kima taw tawa bch barcha barka chwaya yezzi famma 9addech kifech chnowa win '\n",
+"  '3lech ya5i brabi 3aslema marhba sa7a 3aychek 9a3ed n7eb t7eb 9olli ya3ni wala ama 3andi 3andou 3andek mte3 '\n",
+"  'mta3 ki bla zeyed akther a9all a7sen behi mli7 zin 5ater tounes tounsi lyoum ghodwa 8odwa sba7 msa nhar ey '\n",
+"  'la2 7atta inchallah rabbi 7amdoulah dt tnd livraison prix commande merci stock promo').split())\n",
+"def build_vocab():\n",
+"    try: lex=find('lexicon.jsonl')\n",
+"    except Exception: print('  (lexicon.jsonl not uploaded -> real-word metric disabled)'); return None,None\n",
+"    vocab=set(_FUNC)\n",
+"    for l in open(lex,encoding='utf-8'):\n",
+"        try: e=json.loads(l)\n",
+"        except: continue\n",
+"        for v in (e.get('arabizi_variants') or []): vocab.add(_norm(v))\n",
+"        for wd in re.split(r'\\s+', e.get('example_arabizi') or ''):\n",
+"            k=_norm(wd);\n",
+"            if len(k)>=2: vocab.add(k)\n",
+"    vocab.discard(''); skels={_skel(v) for v in vocab if len(_skel(v))>=2}\n",
+"    return vocab, skels\n",
+"_VOCAB,_SKELS=build_vocab()\n",
+"_WORD=re.compile(r\"[A-Za-z0-9'][A-Za-z0-9']*\")\n",
+"def realword_text(t):\n",
+"    if _VOCAB is None: return None\n",
+"    toks=[w for w in _WORD.findall(t or '') if not w.isdigit()]; \n",
+"    if not toks: return 1.0\n",
+"    ok=0\n",
+"    for w in toks:\n",
+"        k=_norm(w);\n",
+"        if len(k)<2: ok+=1; continue\n",
+"        sk=_skel(k)\n",
+"        if k in _VOCAB or (len(sk)>=2 and sk in _SKELS): ok+=1\n",
+"    return ok/len(toks)\n",
+"def realword_report(preds, tag=''):\n",
+"    if _VOCAB is None: return None\n",
+"    rs=[realword_text(p) for p in preds]; m=sum(rs)/len(rs)\n",
+"    print(f'  >> REAL-WORD RATE [{tag}]: {m:.0%}'); return m\n"
+))
+
+cells.append(md("## 7. BASELINE — *before* training (real-word rate + dialect rate)"))
 cells.append(code(
 "eval_rows = load_jsonl(find('eval_set.jsonl'))\n",
 "print('eval items:', len(eval_rows))\n",
 "base_preds = [generate(r['instruction']) for r in eval_rows]\n",
-"base_rate = dialect_report(base_preds, 'BASELINE (before fine-tuning)')\n"
+"base_rate = dialect_report(base_preds, 'BASELINE (before fine-tuning)')\n",
+"base_rw   = realword_report(base_preds, 'BASELINE')\n"
 ))
 
 cells.append(md("## 8. Train (QLoRA, standard HF Trainer)"))
@@ -176,9 +256,12 @@ cells.append(md("## 10. AFTER — dialect rate *after* training (the dataset-eff
 cells.append(code(
 "after_preds = [generate(r['instruction']) for r in eval_rows]\n",
 "after_rate = dialect_report(after_preds, 'AFTER fine-tuning')\n",
-"print(f'\\n=== DATASET EFFICIENCY ===')\n",
-"print(f'dialect rate  BEFORE: {base_rate:.0%}   AFTER: {after_rate:.0%}   (+{(after_rate-base_rate)*100:.0f} pts)')\n",
-"print('\\n--- 8 sample before/after ---')\n",
+"after_rw   = realword_report(after_preds, 'AFTER')\n",
+"print(f'\\n=== RESULT ===')\n",
+"if base_rw is not None:\n",
+"    print(f'REAL-WORD RATE  BEFORE: {base_rw:.0%}   AFTER: {after_rw:.0%}   ({(after_rw-base_rw)*100:+.0f} pts)  <- the one that matters')\n",
+"print(f'dialect rate    BEFORE: {base_rate:.0%}   AFTER: {after_rate:.0%}   (surface marker, saturates easily)')\n",
+"print('\\n--- 8 sample before/after (NEW should be coherent, not just Arabizi-looking) ---')\n",
 "for r,b,a in list(zip(eval_rows, base_preds, after_preds))[:8]:\n",
 "    print('Q  :', r['instruction'][:70]); print('OLD:', b[:90]); print('NEW:', a[:90]); print()\n"
 ))
@@ -196,11 +279,13 @@ cells.append(code(
 
 cells.append(md(
 "## 12. Read the result\n",
-"- The **BEFORE→AFTER dialect rate** is your dataset efficiency. Big jump = the data works.\n",
-"- Scan the sample answers: natural Tunisian? note weak categories → add more pairs there.\n",
-"- **Download** `/kaggle/working/tunisian_lora` (Output tab).\n",
-"- For the real v1: `MODEL_NAME='Qwen/Qwen2.5-7B-Instruct'` (or `Qwen/Qwen3-8B`), `BATCH=1`,\n",
-"  `GRAD_ACCUM=16`, and grow the conversational data.\n"
+"- **REAL-WORD RATE** is the number that matters. If AFTER ≥ BEFORE *and* the sample answers read\n",
+"  coherent, the data worked. If AFTER **drops** below BEFORE, the fine-tune is hurting →\n",
+"  **ship the base model + serving grounding instead** (that was the whole finding).\n",
+"- Dialect rate is kept only as a surface check — it saturates near 96% on gibberish, so don't trust it alone.\n",
+"- **Download** `/kaggle/working/tunisian_lora` (Output tab) and point `serving/` at it.\n",
+"- Next levers if coherence is still weak: more REAL conversational data (PII-stripped scrapes →\n",
+"  transliterate), and keep `candidates`/best-of-N grounding ON at serving time.\n"
 ))
 
 nb = {"cells": cells,

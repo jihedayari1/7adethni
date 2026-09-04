@@ -37,10 +37,16 @@ FEATURE_LABELS = {
 }
 
 
-def build_messages(feature: str, text: str, tone: str = "normal"):
-    """Return [system, user] chat messages for the requested feature."""
+def build_messages(feature: str, text: str, tone: str = "normal", context: str = ""):
+    """Return [system, user] chat messages for the requested feature.
+    `context` is an optional 'Meanings: ...' block (from the RAG retriever) that helps
+    the model understand slang in the user's input; it is added to the system turn.
+    """
     if feature not in FEATURES:
         feature = "idea"
     t = TONES.get(tone, TONES["normal"])
     user = FEATURES[feature].format(t=t, x=(text or "").strip())
-    return [{"role": "system", "content": SYSTEM}, {"role": "user", "content": user}]
+    system = SYSTEM
+    if context:
+        system = SYSTEM + "\n\n(Mou3jam ysa3dek tefhem el input — esta3mlou ken yelzem)\n" + context
+    return [{"role": "system", "content": system}, {"role": "user", "content": user}]

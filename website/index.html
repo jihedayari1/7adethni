@@ -1,0 +1,192 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>7adethni — Ti3ich Derja, partout · Tunisian Arabizi AI</title>
+  <meta name="description" content="7adethni — the Tunisian Derja (Arabizi) AI writing assistant. Translate, reply, w 7adeth fi Tounsi, f kol blasa 3al web." />
+  <link rel="icon" href="../extension/icon128.png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Hanken+Grotesk:wght@400;500;600;700;800&family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="bg-grid"></div>
+
+  <!-- NAV -->
+  <header class="nav">
+    <div class="brand"><span><span class="seven">7</span>adethni</span><span class="ar">حدّثني</span></div>
+    <nav class="tabs" id="tabs">
+      <a href="#overview" class="active">Overview</a>
+      <a href="#onboarding">Onboarding</a>
+      <a href="#popup">Popup</a>
+      <a href="#sidepanel">Side panel</a>
+      <a href="#inline">Inline</a>
+      <a href="#tones">Tones</a>
+    </nav>
+    <button class="toggle" id="themeBtn" type="button"><span class="dot"></span><span id="themeLbl">Light</span></button>
+  </header>
+
+  <main class="wrap">
+    <!-- HERO / OVERVIEW -->
+    <section id="overview" class="hero">
+      <span class="badge"><span class="pulse"></span>Browser extension · Tunisian Derja</span>
+      <h1 class="word"><span class="seven">7</span>adethni</h1>
+      <p class="tag">Ti3ich Derja, partout. Translate, reply, w <span class="hl">7adeth</span> fi Tounsi — f kol blasa 3al web. Talk to me.</p>
+
+      <!-- live transform demo -->
+      <div class="demo rv">
+        <div class="demo__head">
+          <span class="lbl"><b>el si7r</b> · the transformation</span>
+          <button class="replay" id="replay" type="button">↻ Replay</button>
+        </div>
+        <div class="demo__body">
+          <div class="row">
+            <textarea id="srcInput" rows="1" placeholder="Ekteb 7aja bel français, english wala بالعربية...">Comment ça va mon ami ?</textarea>
+            <button class="go" id="goBtn" type="button"><span>7awwel</span> ↵</button>
+          </div>
+          <div class="arrow">→ Tunisian Arabizi</div>
+          <div class="out" id="outText"></div>
+          <div class="tones" id="toneRow">
+            <button class="tone active" data-tone="normal" type="button">3adi</button>
+            <button class="tone" data-tone="funny" type="button">Morfeh 😄</button>
+            <button class="tone" data-tone="formal" type="button">Rasmi</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="stats rv">
+        <div class="stat"><b><span class="num">17</span>,307</b><span>kelma tounsiya fel mou3jam</span></div>
+        <div class="stat"><b><span class="num">3</span> lughat</b><span>FR · EN · العربية → Arabizi</span></div>
+        <div class="stat"><b><span class="num">7</span> = ح</b><span>el arqam, kima el touensa</span></div>
+      </div>
+    </section>
+
+    <!-- ONBOARDING -->
+    <section id="onboarding" class="section">
+      <div class="rv">
+        <span class="eyebrow">Onboarding</span>
+        <h2 class="h2">Tlett khotwa, w n7adthou</h2>
+        <p class="lead">Setup f 9ass: zid el extension, e5tar el ton mte3ek, w abda tekteb bel tounsi f ay blasa.</p>
+      </div>
+      <div class="steps">
+        <div class="step rv"><h3>Zid el extension</h3><p>Install f Chrome, w <b>7</b>adethni ywelli dima fel toolbar mte3ek.</p></div>
+        <div class="step rv"><h3>E5tar el ton</h3><p>3adi, morfeh wala rasmi — el kelma tetbaddel, el ma3na yo93od.</p></div>
+        <div class="step rv"><h3>7adeth w 7awwel</h3><p>Ekteb b ay lugha, w 7adethni yraja3ha lek derja tounsiya 7a9i9iya.</p></div>
+      </div>
+    </section>
+
+    <!-- POPUP MOCKUP -->
+    <section id="popup" class="section">
+      <div class="duo">
+        <div class="duo__txt rv">
+          <span class="chip">⚡ Popup</span>
+          <h3>Fissa3, mel toolbar</h3>
+          <p>Click wa7da 3al icône, ekteb, w 5outh el résultat. Translate, reply wala rewrite —
+             f thawani, bla ma tbaddel el page.</p>
+        </div>
+        <div class="browser rv">
+          <div class="browser__bar">
+            <span class="lights"><i></i><i></i><i></i></span>
+            <span class="urlbar">facebook.com</span>
+            <span class="mini__mark" title="7adethni">7</span>
+          </div>
+          <div class="browser__body">
+            <div class="pageghost">
+              <div class="gh gh--img"></div><div class="gh gh--l"></div><div class="gh gh--m"></div><div class="gh gh--s"></div>
+            </div>
+            <div class="mini">
+              <div class="mini__head"><span class="mini__mark">7</span><b>7adethni</b></div>
+              <div class="mini__body">
+                <div class="mini__pills">
+                  <span class="mini__pill on">🔁 Derja</span><span class="mini__pill">💬 Reply</span><span class="mini__pill">✨ Rewrite</span>
+                </div>
+                <div class="mini__in">I'm late, sorry my friend!</div>
+                <div class="mini__cta">Génère bel tounsi ✨</div>
+                <div class="mini__out" id="miniOut">rani m3attel, sma7ni ya sa7bi 🙏</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- SIDE PANEL MOCKUP -->
+    <section id="sidepanel" class="section">
+      <div class="duo">
+        <div class="browser rv">
+          <div class="browser__bar">
+            <span class="lights"><i></i><i></i><i></i></span>
+            <span class="urlbar">instagram.com</span>
+          </div>
+          <div class="browser__body">
+            <div class="chat" id="chatMock">
+              <div class="bubble bot"><span class="who">7adethni</span>3aslema! 👋 Chnowa n7adhrlek lyoum — caption, reply, wala traduction?</div>
+              <div class="bubble me"><span class="who">enti</span>a3mlli caption l photo mta3 8odwa fi Sidi Bou Saïd 📸</div>
+              <div class="bubble bot"><span class="who">7adethni</span>Sa7it 🌊 jarrab hethom:<br>• "Sidi Bou, win el sma w el b7ar yet9ablou 💙"<br>• "Zar9a w byadh, w el 9alb mertah 🤍"</div>
+              <div class="bubble me"><span class="who">enti</span>el 2ème behi barcha! 3aychek 🙌</div>
+            </div>
+          </div>
+        </div>
+        <div class="duo__txt rv">
+          <span class="chip">💬 Side panel</span>
+          <h3>7adeth w 7awwel, bila ma to5rej</h3>
+          <p>El panel 3al yamin — 7adeth m3ah kima sa7bek, w howa yekteb m3ak: captions,
+             réponses, ideas... w enti mazelt fel page mte3ek.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- INLINE MOCKUP -->
+    <section id="inline" class="section">
+      <div class="duo">
+        <div class="duo__txt rv">
+          <span class="chip">✍️ Inline</span>
+          <h3>A39ed 3al kelma, w 7awwelha</h3>
+          <p>Sélectionni ay jomla f ay text box — post, commentaire, message — w 7adethni
+             y7awwelhalek fi blastha. Direct.</p>
+        </div>
+        <div class="composer rv">
+          <div class="composer__label">✏️ new post — facebook</div>
+          <div class="composer__text" id="inlineText">
+            Ce coucher de soleil est <span class="sel">tellement magnifique, je suis sans mots</span> 🌅
+          </div>
+          <div class="inline-tip"><span class="mark">7</span>adethni · <button id="inlineGo" type="button">7awwel ↵</button></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- TONES (interactive) -->
+    <section id="tones" class="section">
+      <div class="rv">
+        <span class="eyebrow">Tones</span>
+        <h2 class="h2">Nefs el 7keya, ton mte5telef</h2>
+        <p class="lead">Kelma wa7da, barcha tri9at. E5tar el ton, w chouf kifech el jomla tetbaddel.</p>
+      </div>
+      <div class="tonelab rv">
+        <div class="tonelab__msg">el message: <b>"Sorry, I can't come tonight."</b></div>
+        <div class="tonelab__tabs" id="tonelabTabs"></div>
+        <div class="tonelab__out" id="tonelabOut"></div>
+      </div>
+    </section>
+
+    <!-- CTA -->
+    <section class="cta rv">
+      <div class="ar-line">حدّثني — و نحكيو بالتونسي</div>
+      <h2>7adeth bel tounsi, f kol blasa</h2>
+      <p>Zid 7adethni l Chrome w abda tekteb bel derja b style. Mejjeni, w yet3allem menek.</p>
+      <a class="btn" href="#" id="installBtn">Add to Chrome ✨</a>
+      <a class="btn btn--ghost" href="#overview">Jarrab el demo ↑</a>
+      <div class="note">Beta — jey 9rib lel Chrome Web Store. El demo el fou9 ye5dem taw 🔥</div>
+    </section>
+  </main>
+
+  <footer class="foot">
+    <div><span class="foot-seven">7</span>adethni — el AI el tounsi <span class="ar">حدّثني</span> 🇹🇳</div>
+    <div class="row2">Ma3moul b 🤍 fi Tounes · el texte mte3ek yesta3mel bech na7snou el modele</div>
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>

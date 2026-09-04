@@ -6,3 +6,4 @@ bitsandbytes>=0.43
 accelerate
 torch
 pydantic>=2
+rapidfuzz>=3        # lexicon grounding (serving/grounding.py -> rag/retriever.py)

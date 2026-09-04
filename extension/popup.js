@@ -10,7 +10,15 @@ const store = {
     for(const k in obj) localStorage.setItem(k,obj[k]); }
 };
 
-let state = { feature:"post", tone:"normal", apiUrl:DEFAULT_API, deviceId:null, lastReqId:null };
+// MVP: translate is the hero feature and the default
+let state = { feature:"translate", tone:"normal", apiUrl:DEFAULT_API, deviceId:null,
+              lastReqId:null, lastGenerated:null, copiedThisReq:false };
+
+const PLACEHOLDERS = {
+  translate: "Ekteb bel français / english / العربية... w n7awlouhalek l derja 🇹🇳",
+  reply:     "Colli el message elli jek, w n7adhroulek réponse bel tounsi 💬",
+  rewrite:   "Ekteb el nass mte3ek heni, w n7assnouh w n5allouh a7la ✨",
+};
 
 async function init(){
   const s = await store.get({ apiUrl:DEFAULT_API, deviceId:"" });
@@ -26,6 +34,7 @@ $("#features").addEventListener("click", e=>{
   const b=e.target.closest(".pill"); if(!b) return;
   $("#features .is-active")?.classList.remove("is-active"); b.classList.add("is-active");
   state.feature=b.dataset.feat;
+  $("#input").placeholder = PLACEHOLDERS[state.feature] || PLACEHOLDERS.translate;
 });
 $("#tones").addEventListener("click", e=>{
   const b=e.target.closest(".tone"); if(!b) return;
@@ -51,11 +60,22 @@ async function refreshQuota(){
   }catch(_){ /* offline preview: leave default */ }
 }
 
+// ---- event logging (the data flywheel: copy / edit_copy / regen) ----
+async function sendEvent(kind, payload){
+  if(!state.lastReqId) return;
+  try{ await fetch(api("/event"),{ method:"POST", headers:{"Content-Type":"application/json"},
+    body:JSON.stringify({ device_id:state.deviceId, usage_id:state.lastReqId, kind, payload:payload||null }) });
+  }catch(_){ /* never block UX on logging */ }
+}
+
 // ---- generate ----
 async function generate(){
   const text = $("#input").value.trim();
   if(!text){ setStatus("Ekteb 7aja luwel 🙂"); return; }
-  const cta=$("#go"); cta.classList.add("is-loading"); cta.disabled=true; setStatus("9a3ed ye5dem… ⏳");
+  // regenerating without copying = implicit rejection of the previous output
+  if(state.lastReqId && !state.copiedThisReq) sendEvent("regen");
+  const cta=$("#go"); cta.classList.add("is-loading"); cta.disabled=true;
+  $("#output").classList.add("is-loading"); setStatus("9a3ed ye5dem… ⏳");
   try{
     const r = await fetch(api("/generate"),{
       method:"POST", headers:{"Content-Type":"application/json"},
@@ -67,22 +87,41 @@ async function generate(){
     const data = await r.json();
     showOutput(data.output||"(walou)");
     state.lastReqId = data.request_id;
+    state.lastGenerated = data.output||"";
+    state.copiedThisReq = false;
     if(typeof data.remaining==="number") $("#quota").textContent = `${data.remaining}/${data.limit} 🎁`;
     setStatus("");
   }catch(e){ setStatus("Erreur: "+e.message+" — vérifie l'API fel ⚙️",true); }
-  finally{ cta.classList.remove("is-loading"); cta.disabled=false; }
+  finally{ cta.classList.remove("is-loading"); cta.disabled=false; $("#output").classList.remove("is-loading"); }
 }
 $("#go").onclick = generate;
 $("#regen").onclick = generate;
 
+function escapeHtml(s){ return s.replace(/[&<>]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[c])); }
+// gold-tint the Arabizi numerals (7 9 3 5 2) — textContent stays intact so edit-diffing still works
+function paintNums(txt){ return escapeHtml(txt).replace(/[235789]/g, d => `<span class="num">${d}</span>`); }
+
 function showOutput(txt){
-  $("#output").textContent = txt;
+  $("#output").innerHTML = paintNums(txt);
   $("#outBlock .out__tag").classList.add("hidden");           // drop the "Essai" badge
   $("#fbGood").classList.remove("is-on"); $("#fbFix").classList.remove("is-on");
 }
 
-// ---- copy + feedback (the data flywheel) ----
-$("#copy").onclick = async ()=>{ await navigator.clipboard.writeText($("#output").textContent); setStatus("T-copia 📋"); };
+// ---- copy: the strongest implicit signal. Edited-then-copied = a native correction. ----
+$("#copy").onclick = async ()=>{
+  const finalText = $("#output").textContent;
+  await navigator.clipboard.writeText(finalText);
+  state.copiedThisReq = true;
+  if(state.lastGenerated !== null && finalText.trim() !== (state.lastGenerated||"").trim()){
+    sendEvent("edit_copy", finalText);                        // implicit correction pair
+    setStatus("T-copia — w 3aychek 3al tas7i7 ✍️📋");
+  }else{
+    sendEvent("copy");
+    setStatus("T-copia 📋");
+  }
+};
+
+// ---- explicit feedback ----
 $("#fbGood").onclick = ()=>{ sendFeedback("good"); $("#fbGood").classList.add("is-on"); setStatus("3aychek 🤍"); };
 $("#fbFix").onclick = ()=>{
   const corrected = prompt("Sa77a7 el nass (kifech el sa7i7?):", $("#output").textContent);
